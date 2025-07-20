@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptographic URL Params Signer</title>
+    <meta name="author" content="MeowLooper, Gemini Flash 2.5">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        input[type="file"] {
+            margin-bottom: 15px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-right: 10px;
+            transition: background-color 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .output-container {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .output-box {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            word-break: break-all;
+            white-space: pre-wrap;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            border: 1px solid #dee2e6;
+            flex-grow: 1;
+            flex-shrink: 1;
+        }
+
+        .warning {
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .success {
+            color: #28a745;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .output-container button {
+            margin-right: 0;
+            flex-shrink: 0;
+        }
+
+        .output-container .output-box {
+            margin-top: 0;
+        }
+
+        .url-input-mode-selector {
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .url-input-mode-selector label {
+            display: inline;
+            margin-right: 15px;
+            font-weight: normal;
+            cursor: pointer;
+        }
+
+        .url-input-mode-selector input[type="radio"] {
+            margin-right: 5px;
+        }
+
+        .param-row {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .param-row input[type="text"] {
+            margin-bottom: 0;
+            flex: 1;
+        }
+
+        .param-row button {
+            padding: 8px 12px;
+            font-size: 0.9em;
+            margin-right: 0;
+            flex-shrink: 0;
+            background-color: #dc3545;
+        }
+
+        .param-row button:hover {
+            background-color: #c82333;
+        }
+
+        .add-param-btn-wrapper {
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .or-text {
+            display: inline;
+            margin: 0 10px;
+            vertical-align: middle;
+        }
+
+        /* ----------------------- Mobile Responsiveness ----------------------- */
+        @media (max-width: 768px) {
+            body {
+                margin: 10px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .output-container {
+                flex-wrap: wrap;
+                justify-content: space-between;
+            }
+
+            .output-container .output-box {
+                width: 100%;
+            }
+
+            .output-container.three button {
+                width: 48%;
+                margin-top: 10px;
+                margin-right: 0;
+            }
+
+            button {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+
+            .or-text {
+                display: block;
+                text-align: center;
+                margin: 10px 0;
+                font-weight: bold;
+            }
+
+            .url-input-mode-selector .url-input-mode-selector-container {
+                display: block;
+                margin-right: 0;
+                margin-bottom: 5px;
+            }
+
+            .param-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .param-row input[type="text"] {
+                margin-bottom: 10px;
+                width: 100%;
+            }
+
+            .param-row button {
+                width: 100%;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Cryptographic URL Params Signer</h1>
+        <p>This page allows you to sign URL query parameters using an Ed25519 private key. The signature will be
+            appended as a query parameter.</p>
+
+        <h2>1. Key Management</h2>
+        <p class="warning">
+            <strong>WARNING:</strong> Generated or uploaded keys aren't stored in the browser. They will be cleared once
+            the page is closed or refreshed.
+            Therefore if you generate a new key pair, you need to either download the secret to your computer or copy &
+            save it.
+        </p>
+
+        <div class="output-container three">
+            <div class="output-box" id="secret" style="user-select: none;">No secret loaded.</div>
+            <button id="copySecretBtn" disabled>Copy</button>
+            <button id="downloadSecretBtn" disabled>Download</button>
+        </div>
+
+        <div class="output-container three">
+            <div class="output-box" id="publicKey">No public key available.</div>
+            <button id="copyPublicKeyBtn" disabled>Copy</button>
+            <button id="downloadPublicKeyBtn" disabled>Download</button>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button id="generateNewKeyBtn">Generate New Key Pair</button>
+            <span class="or-text">or</span>
+            <button id="loadKeyBtn">Load Existing Secret</button>
+            <input type="file" id="secretFile" style="display: none;" accept=".txt,.pem,.key" />
+        </div>
+
+        <h2>2. Sign URL</h2>
+
+        <div class="url-input-mode-selector">
+            <span class="url-input-mode-selector-container">
+                <input type="radio" id="modeFullUrl" name="urlInputMode" value="full" checked>
+                <label for="modeFullUrl">Enter Full URL</label>
+            </span>
+            <span class="url-input-mode-selector-container">
+                <input type="radio" id="modeBaseParams" name="urlInputMode" value="params">
+                <label for="modeBaseParams">Enter Base URL + Parameters</label>
+            </span>
+        </div>
+
+        <div id="fullUrlSection">
+            <label for="urlToSign">URL to Sign:</label>
+            <input type="text" id="urlToSign" placeholder="e.g. https://scratch.mit.edu/projects/123?param=value"
+                value="https://scratch.mit.edu/projects/123?name=Sarah&pose=1">
+        </div>
+
+        <div id="paramsSection" class="hidden">
+            <label for="baseUrlInput">Base URL (without query parameters):</label>
+            <input type="text" id="baseUrlInput" placeholder="e.g. https://scratch.mit.edu/projects/123"
+                value="https://scratch.mit.edu/projects/123">
+
+            <label>Query Parameters:</label>
+            <div id="paramContainer">
+                <!-- Dynamic parameter rows will be added here -->
+            </div>
+            <div class="add-param-btn-wrapper">
+                <button id="addParamBtn">Add Parameter</button>
+            </div>
+        </div>
+
+        <button id="signUrlBtn" disabled>Sign URL</button>
+        <div class="output-container">
+            <div class="output-box" id="signedUrlOutput">Signed URL will appear here.</div>
+            <button id="copySignedBtn" disabled>Copy</button>
+        </div>
+
+        <script>
+            // Prevent polluting the global scope and keeps variables private.
+            (function () {
+                // Constants for key prefixes to make them easily distinguishable.
+                const SECRET_PREFIX = 'secret_';
+                const PUBLICKEY_PREFIX = 'public_';
+
+                // Define the length of the secret to reveal at end for masking purposes.
+                const MASK_REVEAL_LENGTH = 4;
+
+                const GENERATE_CONFIRMATION = 'A key pair is currently loaded and was generated in this session. If you have not downloaded or copied it, it will be lost. Do you want to generate a new key pair and replace it?';
+
+                // State variables for the application
+                let secretKey = null; // Stored WebCryptoKey object for private key
+                let publicKey = null; // Stored WebCryptoKey object for public key
+                let exportedSecret = null; // Base64 representation of the exported private key
+                let exportedPublicKey = null; // Base64 representation of the exported public key
+                let wasLoadedFromFile = false; // Flag to track if the key was loaded from a file (affects warnings)
+                let signedUrl = null; // Stores the most recently signed URL
+
+                // Get references to DOM elements
+                const secretEl = document.getElementById('secret');
+                const publicKeyEl = document.getElementById('publicKey');
+                const downloadSecretBtn = document.getElementById('downloadSecretBtn');
+                const downloadPublicKeyBtn = document.getElementById('downloadPublicKeyBtn');
+                const copySecretBtn = document.getElementById('copySecretBtn');
+                const copyPublicKeyBtn = document.getElementById('copyPublicKeyBtn');
+                const generateNewKeyBtn = document.getElementById('generateNewKeyBtn');
+                const loadKeyBtn = document.getElementById('loadKeyBtn');
+                const secretFile = document.getElementById('secretFile');
+                const signedUrlOutputEl = document.getElementById('signedUrlOutput');
+                const signUrlBtn = document.getElementById('signUrlBtn');
+                const urlToSignInput = document.getElementById('urlToSign');
+                const copySignedBtn = document.getElementById('copySignedBtn');
+
+                // New DOM elements for URL input modes
+                const modeFullUrlRadio = document.getElementById('modeFullUrl');
+                const modeBaseParamsRadio = document.getElementById('modeBaseParams');
+                const fullUrlSection = document.getElementById('fullUrlSection');
+                const paramsSection = document.getElementById('paramsSection');
+                const baseUrlInput = document.getElementById('baseUrlInput');
+                const paramContainer = document.getElementById('paramContainer');
+                const addParamBtn = document.getElementById('addParamBtn');
+
+
+                /**
+                 * Converts an ArrayBuffer to a Base64URL string (RFC 4648 §5).
+                 * @param {ArrayBuffer} buffer The ArrayBuffer to convert.
+                 * @returns {string} The Base64URL encoded string.
+                 */
+                function arrayBufferToBase64Url(buffer) {
+                    // Use btoa for standard Base64 encoding.
+                    const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+                    // Replace URL-unsafe characters (+, /) and remove padding (=).
+                    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                }
+
+                /**
+                 * Converts a Base64URL string to an ArrayBuffer.
+                 * @param {string} base64url The Base64URL string to convert.
+                 * @returns {ArrayBuffer} The decoded ArrayBuffer.
+                 */
+                function base64UrlToArrayBuffer(base64url) {
+                    // Restore URL-unsafe characters and add padding if necessary.
+                    const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+                    const pad = base64.length % 4;
+                    if (pad) {
+                        // Pad with '=' characters to make it a multiple of 4.
+                        // (5 - pad) because pad can be 1, 2, or 3. If pad is 1, needs 3 '='.
+                        // If pad is 2, needs 2 '='. If pad is 3, needs 1 '='.
+                        base64 += new Array(5 - pad).join('=');
+                    }
+                    // Use atob to decode Base64 and then convert to Uint8Array.
+                    const binary_string = atob(base64);
+                    const len = binary_string.length;
+                    const bytes = new Uint8Array(len);
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binary_string.charCodeAt(i);
+                    }
+                    return bytes.buffer;
+                }
+
+                /**
+                 * Converts an ArrayBuffer to a standard Base64 string (RFC 4648 §4).
+                 * @param {ArrayBuffer} buffer The ArrayBuffer to convert.
+                 * @returns {string} The standard Base64 encoded string.
+                 */
+                function arrayBufferToBase64(buffer) {
+                    let binary = '';
+                    const bytes = new Uint8Array(buffer);
+                    const len = bytes.byteLength;
+                    for (let i = 0; i < len; i++) {
+                        binary += String.fromCharCode(bytes[i]);
+                    }
+                    return btoa(binary);
+                }
+
+                /**
+                 * Converts a standard Base64 string to an ArrayBuffer.
+                 * @param {string} base64 The standard Base64 string to convert.
+                 * @returns {ArrayBuffer} The decoded ArrayBuffer.
+                 */
+                function base64ToArrayBuffer(base64) {
+                    const binary_string = atob(base64);
+                    const len = binary_string.length;
+                    const bytes = new Uint8Array(len);
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binary_string.charCodeAt(i);
+                    }
+                    return bytes.buffer;
+                }
+
+                /**
+                 * Sets the internal key state variables and exports keys to Base64 strings.
+                 * @param {CryptoKeyPair} keyPair The WebCryptoKey pair (privateKey and publicKey).
+                 */
+                async function setKeys(keyPair) {
+                    secretKey = keyPair.privateKey;
+                    publicKey = keyPair.publicKey;
+
+                    // Export private key in PKCS#8 format (common for private keys, includes public key info).
+                    exportedSecret = arrayBufferToBase64(await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey));
+                    // Export public key in SPKI format (SubjectPublicKeyInfo).
+                    exportedPublicKey = arrayBufferToBase64(await window.crypto.subtle.exportKey("spki", keyPair.publicKey));
+                }
+
+                /**
+                 * Generates a new Ed25519 key pair using the Web Cryptography API.
+                 */
+                async function generateKeyPair() {
+                    // Clear current key states
+                    secretKey = null;
+                    publicKey = null;
+                    exportedPublicKey = null;
+                    exportedSecret = null;
+                    wasLoadedFromFile = false; // New key is generated, not loaded from file.
+
+                    try {
+                        const currentKeyPair = await window.crypto.subtle.generateKey(
+                            {
+                                name: "Ed25519", // Algorithm name for EdDSA using Ed25519 curve
+                            },
+                            true, // `extractable`: Allows exporting the key (essential for saving/copying)
+                            ["sign", "verify"] // Key usages: 'sign' for private, 'verify' for public
+                        );
+
+                        await setKeys(currentKeyPair);
+                    } catch (error) {
+                        alert("Error generating key pair: " + error.message);
+                    }
+                    showKeys(); // Update UI with new key info
+                }
+
+                /**
+                 * Updates the UI to display the current key information (masked secret, full public key)
+                 * and enables/disables relevant buttons.
+                 */
+                function showKeys() {
+                    // Mask the secret key for display for security.
+                    // PKCS#8 Ed25519 keys are quite long, so revealing a small prefix/suffix is generally safe
+                    // while still giving a visual indication that a key is present and what type it is.
+                    const secretText = !exportedSecret ? "No secret loaded." :
+                        SECRET_PREFIX +
+                        "********************" +
+                        exportedSecret.slice(-MASK_REVEAL_LENGTH);
+                    secretEl.innerHTML = secretText;
+
+                    const publicKeyText = !exportedPublicKey ? "No public key available." : PUBLICKEY_PREFIX + exportedPublicKey;
+                    publicKeyEl.innerHTML = publicKeyText;
+
+                    // Enable/disable buttons based on whether a secret key is loaded.
+                    const hasSecret = !!exportedSecret;
+                    copySecretBtn.disabled = !hasSecret;
+                    copyPublicKeyBtn.disabled = !hasSecret;
+                    downloadPublicKeyBtn.disabled = !hasSecret;
+                    downloadSecretBtn.disabled = !hasSecret;
+                    signUrlBtn.disabled = !hasSecret;
+                    copySignedBtn.disabled = true; // Initially disable copy signed URL button until a URL is signed.
+                    signedUrlOutputEl.textContent = "Signed URL will appear here."; // Reset output
+                }
+
+                /**
+                 * Prompts the user to download a key to a file.
+                 * @param {string} keyContent The content of the key to download.
+                 * @param {string} filename The suggested filename for the download.
+                 */
+                async function downloadKey(keyContent, filename) {
+                    try {
+                        const blob = new Blob([keyContent], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click(); // Programmatically click the link to trigger download
+                        document.body.removeChild(a); // Clean up the temporary link
+                        URL.revokeObjectURL(url); // Release the object URL
+                    } catch (error) {
+                        alert("Failed to download key: " + error.message);
+                    }
+                }
+
+                /**
+                 * Derives the Ed25519 public key from a loaded Ed25519 private key.
+                 * This is often needed when loading a private key, as the public key might not be imported directly.
+                 * Ed25519 private keys inherently contain enough information to derive the corresponding public key.
+                 * @param {CryptoKey} privateKey The imported Ed25519 private key.
+                 * @returns {Promise<CryptoKey>} A promise that resolves with the derived public key.
+                 * @throws {Error} If the private key is not extractable or derivation fails.
+                 */
+                async function deriveEd25519PublicKey(privateKey) {
+                    if (!privateKey.extractable) {
+                        throw new Error('Private key is not extractable. Cannot derive public key.');
+                    }
+
+                    // Export the private key in JWK format.
+                    // JWK (JSON Web Key) is a standard format for cryptographic keys.
+                    // For Ed25519, the private JWK contains 'd' (private key value) and 'x' (public key value).
+                    const privateJwk = await crypto.subtle.exportKey('jwk', privateKey);
+
+                    // Construct a public JWK from the private JWK's public components.
+                    const publicJwk = {
+                        kty: privateJwk.kty, // Key Type (e.g., "OKP" for Octet Key Pair)
+                        crv: privateJwk.crv, // Curve (e.g., "Ed25519")
+                        x: privateJwk.x,     // Public key coordinate (Base64url-encoded)
+                        ext: true            // Indicates the key is extractable
+                    };
+
+                    // Import the public JWK to get a CryptoKey object for the public key.
+                    const publicKey = await crypto.subtle.importKey(
+                        'jwk',
+                        publicJwk,
+                        {
+                            name: 'Ed25519' // Algorithm name
+                        },
+                        true, // extractable (true is fine for public keys)
+                        ['verify'] // Key usage for public keys
+                    );
+
+                    return publicKey;
+                }
+
+
+                /**
+                 * Loads a private key from a file provided by the user.
+                 * Expects the file content to be a Base64-encoded PKCS#8 Ed25519 private key,
+                 * potentially with 'secret_' prefix. It attempts to parse PEM-like content.
+                 * @param {File} file The file object selected by the user.
+                 */
+                async function loadPrivateKeyFromFile(file) {
+                    try {
+                        const reader = new FileReader();
+                        reader.onload = async (event) => {
+                            try {
+                                let fileContent = event.target.result;
+
+                                // Basic check for public key file if it starts with public_ prefix
+                                if (fileContent && fileContent.startsWith(PUBLICKEY_PREFIX)) {
+                                    alert('Error: You provided a public key file, but a secret key was required.');
+                                    return;
+                                }
+
+                                // Remove custom prefix if present
+                                if (fileContent && fileContent.startsWith(SECRET_PREFIX)) {
+                                    fileContent = fileContent.substring(SECRET_PREFIX.length);
+                                }
+
+                                // Handle PEM-like format by stripping common headers/footers
+                                // and then joining the lines for Base64 decoding.
+                                fileContent = fileContent
+                                    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+                                    .replace(/-----END PRIVATE KEY-----/g, '')
+                                    .replace(/\s+/g, '') // Remove all whitespace (including newlines)
+                                    .trim();
+
+                                if (!fileContent) {
+                                    alert('Error: File is empty or does not contain a valid Base64 encoded key after processing.');
+                                    return;
+                                }
+
+                                const der = base64ToArrayBuffer(fileContent);
+
+                                const loadedPrivateKey = await window.crypto.subtle.importKey(
+                                    "pkcs8", // Format: Public-Key Cryptography Standards #8 (standard for private keys)
+                                    der,
+                                    { name: "Ed25519" },
+                                    true, // extractable: MUST be true to derive public key
+                                    ["sign"] // Key usage
+                                );
+
+                                // Derive the public key from the loaded private key
+                                const derivedPublicKey = await deriveEd25519PublicKey(loadedPrivateKey);
+
+                                await setKeys({
+                                    privateKey: loadedPrivateKey,
+                                    publicKey: derivedPublicKey,
+                                });
+
+                                wasLoadedFromFile = true; // Mark that key was loaded from file
+                                showKeys(); // Update UI
+                            } catch (importError) {
+                                alert("Error importing private key from file: " + importError.message +
+                                    ". Please ensure it's a valid Base64-encoded Ed25519 PKCS#8 private key (PEM-formatted content is handled).");
+                            } finally {
+                                // Clear the file input so it is possible to try loading the same file again.
+                                secretFile.value = null;
+                            }
+                        };
+                        reader.readAsText(file);
+                    } catch (error) {
+                        alert("Error reading file: " + error.message);
+                    }
+                }
+
+                /**
+                 * Signs the URL's query parameters using the loaded private key.
+                 * The signature is generated from a canonical representation of the parameters
+                 * and appended to the URL.
+                 */
+                async function signUrl() {
+                    copySignedBtn.disabled = true; // Disable copy button while signing
+
+                    if (!secretKey) {
+                        alert("Please generate or load a secret key first.");
+                        return;
+                    }
+
+                    let originalUrlString;
+
+                    if (modeFullUrlRadio.checked) {
+                        originalUrlString = urlToSignInput.value.trim();
+                        if (!originalUrlString) {
+                            alert("Please enter a URL to sign.");
+                            return;
+                        }
+                    } else { // modeBaseParamsRadio.checked
+                        const baseUrl = baseUrlInput.value.trim();
+                        if (!baseUrl) {
+                            alert("Please enter a base URL.");
+                            return;
+                        }
+
+                        // Collect parameters from dynamic inputs
+                        const params = new URLSearchParams();
+                        const paramRows = paramContainer.querySelectorAll('.param-row');
+                        paramRows.forEach(row => {
+                            const keyInput = row.querySelector('.param-key');
+                            const valueInput = row.querySelector('.param-value');
+                            const key = keyInput.value.trim();
+                            const value = valueInput.value.trim();
+
+                            if (key) { // Only add if key is not empty
+                                params.append(key, value);
+                            }
+                        });
+
+                        // Construct the full URL from base URL and collected parameters
+                        originalUrlString = baseUrl;
+                        const constructedQuery = params.toString();
+                        if (constructedQuery) {
+                            // If the base URL already has a query string, append with '&', otherwise with '?'
+                            originalUrlString += (originalUrlString.includes('?') ? '&' : '?') + constructedQuery;
+                        }
+                    }
+
+                    try {
+                        const urlObj = new URL(originalUrlString);
+
+                        // Create a new URLSearchParams object to hold the parameters for signing.
+                        // This ensures we work with a clean set and can sort them.
+                        const paramsToSign = new URLSearchParams();
+
+                        // Sort parameters by key for a canonical representation.
+                        // This is crucial for consistent signatures, as URL parameter order can vary.
+                        const sortedKeys = Array.from(urlObj.searchParams.keys()).sort();
+
+                        for (const key of sortedKeys) {
+                            // Exclude any existing 'signature' parameter from the data to be signed.
+                            // This prevents recursive signing and ensures the signature itself isn't part of the input.
+                            if (key !== 'signature') {
+                                // For canonicalization, it's safer to get all values for a key.
+                                // Here, we assume single values per key, typical for simple queries.
+                                // If a key has multiple values, URLSearchParams.getAll(key) would be needed
+                                // and then iterating through those. For simplicity and typical web usage, get() is fine.
+                                paramsToSign.append(key, urlObj.searchParams.get(key));
+                            }
+                        }
+
+                        // Encode the canonical query string (e.g., "key1=val1&key2=val2") to bytes.
+                        const encoder = new TextEncoder();
+                        const dataToSign = encoder.encode(paramsToSign.toString());
+
+                        // Perform the Ed25519 signature.
+                        // Ed25519 algorithm inherently uses SHA-512, so no separate 'hash' parameter is needed or accepted.
+                        const signatureBuffer = await window.crypto.subtle.sign(
+                            { name: "Ed25519" }, // Only specify the algorithm name for Ed25519
+                            secretKey,
+                            dataToSign
+                        );
+
+                        // Convert the binary signature to a Base64URL string for safe URL inclusion.
+                        const signatureBase64Url = arrayBufferToBase64Url(signatureBuffer);
+
+                        // Remove any existing 'signature' parameter from the original URL before appending the new one.
+                        // This ensures we don't end up with multiple 'signature' parameters.
+                        urlObj.searchParams.delete('signature');
+                        // Append the newly generated signature parameter.
+                        urlObj.searchParams.set('signature', signatureBase64Url);
+
+                        signedUrl = urlObj.toString(); // Get the final URL string
+
+                        signedUrlOutputEl.textContent = signedUrl;
+                        signedUrlOutputEl.style.color = '#2c3e50'; // Default text color
+                        copySignedBtn.disabled = false; // Enable copy button
+                    } catch (error) {
+                        signedUrlOutputEl.textContent = "Error signing URL: " + error.message;
+                        signedUrlOutputEl.style.color = '#dc3545'; // Error text color
+                        copySignedBtn.disabled = true; // Keep copy button disabled on error
+                    }
+                }
+
+                /**
+                 * Adds a new key/value parameter input row to the UI.
+                 * @param {string} key Optional initial key value.
+                 * @param {string} value Optional initial value.
+                 */
+                function addParameterRow(key = '', value = '') {
+                    const row = document.createElement('div');
+                    row.className = 'param-row';
+
+                    const keyInput = document.createElement('input');
+                    keyInput.type = 'text';
+                    keyInput.className = 'param-key';
+                    keyInput.placeholder = 'Parameter name, e.g. name';
+                    keyInput.value = key;
+
+                    const valueInput = document.createElement('input');
+                    valueInput.type = 'text';
+                    valueInput.className = 'param-value';
+                    valueInput.placeholder = 'Parameter value, e.g. Sarah';
+                    valueInput.value = value;
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.textContent = 'Remove';
+                    removeBtn.type = 'button'; // Prevent form submission
+                    removeBtn.addEventListener('click', () => {
+                        row.remove();
+                    });
+
+                    row.appendChild(keyInput);
+                    row.appendChild(valueInput);
+                    row.appendChild(removeBtn);
+                    paramContainer.appendChild(row);
+                }
+
+                /**
+                 * Populates parameter input fields from an existing URL's query string.
+                 * @param {string} urlString The URL string to parse.
+                 */
+                function populateParamsFromUrl(urlString) {
+                    // Clear existing parameters
+                    paramContainer.innerHTML = '';
+                    let tempBaseUrl = urlString; // Default to full string if URL parsing fails
+
+                    try {
+                        const urlObj = new URL(urlString);
+                        // Extract base URL: origin + pathname + hash (ignore search params for base)
+                        tempBaseUrl = urlObj.origin + urlObj.pathname + urlObj.hash;
+
+                        urlObj.searchParams.forEach((value, key) => {
+                            if (key !== 'signature') { // Don't populate the signature field itself
+                                addParameterRow(key, value);
+                            }
+                        });
+                        // If no parameters were found or only signature, add one empty row
+                        if (urlObj.searchParams.size === 0 || (urlObj.searchParams.size === 1 && urlObj.searchParams.has('signature'))) {
+                            addParameterRow();
+                        }
+
+                    } catch (e) {
+                        // If URL is invalid, keep the full string in base input and add one empty row for params
+                        alert("Invalid URL provided for parsing parameters: " + e.message);
+                        addParameterRow();
+                    }
+                    baseUrlInput.value = tempBaseUrl; // Set base URL input after parsing
+                }
+
+                /**
+                 * Generates a timestamp string for filenames.
+                 * @returns {string} A string like "YYYYMMDD-HHMMSS".
+                 */
+                function getDate() {
+                    const date = new Date();
+                    const year = date.getFullYear();
+                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                    const day = date.getDate().toString().padStart(2, '0');
+                    const hours = date.getHours().toString().padStart(2, '0');
+                    const minutes = date.getMinutes().toString().padStart(2, '0');
+                    const seconds = date.getSeconds().toString().padStart(2, '0');
+                    return `${year}${month}${day}-${hours}${minutes}${seconds}`;
+                }
+
+                /**
+                 * Provides visual feedback when content is copied to clipboard.
+                 * Changes button text to 'Copied!' temporarily.
+                 * @param {Event} ev The click event.
+                 */
+                function copied(ev) {
+                    const originalText = ev.srcElement.innerHTML;
+                    ev.srcElement.innerHTML = 'Copied!';
+                    setTimeout(() => ev.srcElement.innerHTML = originalText, 1000); // Revert after 1 second
+                }
+
+                /**
+                 * Handles the file selection for loading a secret key.
+                 */
+                async function handleSecretFileChange() {
+                    if (secretFile.files.length > 0) {
+                        await loadPrivateKeyFromFile(secretFile.files[0]);
+                    }
+                }
+
+                /**
+                 * Handles the URL input mode change.
+                 * Toggles visibility of sections and populates inputs for data continuity.
+                 */
+                function handleUrlInputModeChange() {
+                    if (modeFullUrlRadio.checked) {
+                        fullUrlSection.classList.remove('hidden');
+                        paramsSection.classList.add('hidden');
+                        // If switching FROM params mode, try to reconstruct the full URL
+                        // and put it into the fullUrlInput for convenience
+                        try {
+                            const baseUrl = baseUrlInput.value.trim();
+                            const params = new URLSearchParams();
+                            const paramRows = paramContainer.querySelectorAll('.param-row');
+                            paramRows.forEach(row => {
+                                const keyInput = row.querySelector('.param-key');
+                                const valueInput = row.querySelector('.param-value');
+                                const key = keyInput.value.trim();
+                                const value = valueInput.value.trim();
+                                if (key) {
+                                    params.append(key, value);
+                                }
+                            });
+                            let reconstructedUrl = baseUrl;
+                            const constructedQuery = params.toString();
+                            if (constructedQuery) {
+                                reconstructedUrl += (reconstructedUrl.includes('?') ? '&' : '?') + constructedQuery;
+                            }
+                            if (reconstructedUrl) {
+                                urlToSignInput.value = reconstructedUrl;
+                            }
+                        } catch (e) {
+                            // ignore errors, just means a malformed URL was in params mode
+                            alert("Error reconstructing URL from parameters: " + e.message);
+                        }
+
+                    } else { // modeBaseParamsRadio.checked
+                        fullUrlSection.classList.add('hidden');
+                        paramsSection.classList.remove('hidden');
+                        // If switching FROM full URL mode, parse the existing URL
+                        // and populate the base URL and parameter fields
+                        populateParamsFromUrl(urlToSignInput.value);
+                    }
+                }
+
+                /**
+                 * Initializes all event listeners for buttons and file input.
+                 */
+                function initialise() {
+                    generateNewKeyBtn.addEventListener('click', async () => {
+                        // Confirm if current unsaved keys should be replaced.
+                        if (secretKey && !wasLoadedFromFile) {
+                            const confirmed = confirm(GENERATE_CONFIRMATION);
+                            if (confirmed) {
+                                await generateKeyPair();
+                            }
+                        } else {
+                            await generateKeyPair();
+                        }
+                    });
+
+                    signUrlBtn.addEventListener('click', signUrl);
+
+                    copySecretBtn.addEventListener('click', async (ev) => {
+                        if (exportedSecret) {
+                            await navigator.clipboard.writeText(SECRET_PREFIX + exportedSecret);
+                            copied(ev);
+                        }
+                    });
+
+                    copyPublicKeyBtn.addEventListener('click', async (ev) => {
+                        if (exportedPublicKey) {
+                            await navigator.clipboard.writeText(PUBLICKEY_PREFIX + exportedPublicKey);
+                            copied(ev);
+                        }
+                    });
+
+                    copySignedBtn.addEventListener('click', async (ev) => {
+                        if (signedUrl) {
+                            await navigator.clipboard.writeText(signedUrl);
+                            copied(ev);
+                        }
+                    });
+
+                    downloadSecretBtn.addEventListener('click', () => {
+                        if (exportedSecret) {
+                            downloadKey(SECRET_PREFIX + exportedSecret, `secret_ed25519_${getDate()}.txt`);
+                        }
+                    });
+
+                    downloadPublicKeyBtn.addEventListener('click', () => {
+                        if (exportedPublicKey) {
+                            downloadKey(PUBLICKEY_PREFIX + exportedPublicKey, `public_ed25519_${getDate()}.txt`);
+                        }
+                    });
+
+                    loadKeyBtn.addEventListener('click', () => {
+                        // Confirm if current unsaved keys should be replaced before opening file dialog.
+                        if (secretKey && !wasLoadedFromFile) {
+                            const confirmed = confirm(GENERATE_CONFIRMATION);
+                            if (confirmed) {
+                                secretFile.click(); // Programmatically click the hidden file input
+                            }
+                        } else {
+                            secretFile.click(); // Programmatically click the hidden file input
+                        }
+                    });
+
+                    secretFile.addEventListener('change', handleSecretFileChange);
+
+                    // Event listeners for new URL input mode features
+                    modeFullUrlRadio.addEventListener('change', handleUrlInputModeChange);
+                    modeBaseParamsRadio.addEventListener('change', handleUrlInputModeChange);
+                    addParamBtn.addEventListener('click', () => addParameterRow());
+
+                    // Initial UI setup on page load
+                    // Populate parameters from the default 'urlToSignInput' value
+                    // This ensures that if the page loads in "Base URL + Parameters" mode,
+                    // it starts with the example URL's components.
+                    populateParamsFromUrl(urlToSignInput.value);
+                    // Set initial visibility based on default radio button selection
+                    handleUrlInputModeChange();
+
+                    // Initial UI update for keys
+                    showKeys();
+                }
+
+                // Run the initialization function when the script loads
+                initialise();
+            })();
+        </script>
+    </div>
+</body>
+
+</html>
