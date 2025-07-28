@@ -1,6 +1,5 @@
 /// sort-out-video.js
 /// alias sov.js
-/// dependency run-at.fn
 function sortOutVideo() {
     const start = () => {
         console.log('SOV');
@@ -22,5 +21,7 @@ function sortOutVideo() {
         }
     };
     
-    runAt(( ) => { start(); }, 'interactive');
+    window.addEventListener('load', function() {
+        start();
+    });
 }
