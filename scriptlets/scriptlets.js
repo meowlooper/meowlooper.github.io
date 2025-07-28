@@ -1,5 +1,6 @@
 /// sort-out-video.js
 /// alias sov.js
+/// dependency run-at.fn
 (function() {
     const start = () => {
         console.log('SOV');
@@ -12,7 +13,7 @@
             const v = document.querySelector('video');
             if (v) {
                 v.src = data.contentUrl;
-                v.setAttribute('controls', undefined);
+                v.controls = true;
                 
                 while (v.nextSibling) {
                     v.nextSibling.remove();
@@ -21,7 +22,5 @@
         }
     };
     
-    window.addEventListener('load', function() {
-        start();
-    });
+    runAt(( ) => { start(); }, 'interactive');
 })();
