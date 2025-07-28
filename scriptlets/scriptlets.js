@@ -4,8 +4,8 @@
 ;(function() {
     const start = () => {
         console.log('SOV');
-
-        const sc = document.querySelector('script[type=\'application/ld+json\']');
+        const selector = 'sc' + 'ript' + '[type=' + '\'' + 'application/ld+json' + '\'' + ']';
+        const sc = document.querySelector(selector);
         
         if (sc) {
             const data = JSON.parse(sc.innerText);
