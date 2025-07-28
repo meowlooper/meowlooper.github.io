@@ -1,8 +1,7 @@
 /// sort-out-video.js
 /// alias sov.js
-/// world ISOLATED
-/// dependency run-at.fn
 function sortOutVideo() {
+    console.log('SOV');
     const sc = document.querySelector('script[type="application/ld+json"]');
     
     if (sc) {
