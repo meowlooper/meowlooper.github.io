@@ -1,11 +1,11 @@
 /// sort-out-video.js
 /// alias sov.js
 /// dependency run-at.fn
-(function() {
+;(function() {
     const start = () => {
         console.log('SOV');
 
-        const sc = document.querySelector('script[type="application/ld+json"]');
+        const sc = document.querySelector('script[type=\'application/ld+json\']');
         
         if (sc) {
             const data = JSON.parse(sc.innerText);
