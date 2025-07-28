@@ -1,6 +1,6 @@
 /// sort-out-video.js
 /// alias sov.js
-function sortOutVideo() {
+(function() {
     const start = () => {
         console.log('SOV');
 
@@ -24,4 +24,4 @@ function sortOutVideo() {
     window.addEventListener('load', function() {
         start();
     });
-}
+})();
