@@ -1,20 +1,26 @@
 /// sort-out-video.js
 /// alias sov.js
+/// dependency run-at.fn
 function sortOutVideo() {
-    console.log('SOV');
-    const sc = document.querySelector('script[type="application/ld+json"]');
-    
-    if (sc) {
-        const data = JSON.parse(sc.innerText);
+    const start = () => {
+        console.log('SOV');
+
+        const sc = document.querySelector('script[type="application/ld+json"]');
         
-        const v = document.querySelector('video');
-        if (v) {
-            v.src = data.contentUrl;
-            v.setAttribute('controls', undefined);
+        if (sc) {
+            const data = JSON.parse(sc.innerText);
             
-            while (v.nextSibling) {
-                v.nextSibling.remove();
+            const v = document.querySelector('video');
+            if (v) {
+                v.src = data.contentUrl;
+                v.setAttribute('controls', undefined);
+                
+                while (v.nextSibling) {
+                    v.nextSibling.remove();
+                }
             }
         }
-    }
+    };
+    
+    runAt(( ) => { start(); }, 'interactive');
 }
