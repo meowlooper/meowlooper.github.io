@@ -31,7 +31,7 @@
             }
         }
         deblur();
-        window.setTimeout(() => { deblur(); }, 5000);
+        window.setTimeout(() => { deblur(); }, 2000);
     };
     runAt(() => { start(); }, 'interactive');
 })();
