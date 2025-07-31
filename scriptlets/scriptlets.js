@@ -17,6 +17,17 @@
                 }
             }
         }
+        const items = document.querySelectorAll('.thumb-block');
+        for (let item of items) {
+            const image = item.querySelector('.thumb a img');
+            if (image) {
+                image.removeAttribute('style');
+            }
+            const blur = item.querySelector('.sfw-click-area');
+            if (blur) {
+                blur.remove();
+            }
+        }        
     };
     runAt(() => { start(); }, 'interactive');
 })();
