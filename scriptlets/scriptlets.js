@@ -19,7 +19,9 @@
         const vids = document.querySelectorAll('video');
         for (let v of vids) {
             console.log('v: ' + v.style.filter);
-            v.style.setProperty('filter', 'none', 'important');
+            const newV = v.cloneNode(true);
+            v.replaceWith(newV);
+            newV.style.setProperty('filter', 'none', 'important');
         }
         if (++counter < 5) {
             w.setTimeout(() => { deblur(); }, 2000);
