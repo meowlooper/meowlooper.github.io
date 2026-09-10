@@ -3,7 +3,7 @@
 /// dependency run-at.fn
 ; (function () {
     let counter = 0;
-    
+    const w = window;
     const deblur = () => {
         const items = document.querySelectorAll('.thumb-block');
         for (let item of items) {
@@ -21,9 +21,8 @@
             console.log('v: ' + v.style.filter);
             v.style.filter = 'none !important';
         }
-        
-        while (++counter < 5) {
-            window.setTimeout(() => { deblur(); }, 2000);
+        if (++counter < 5) {
+            w.setTimeout(() => { deblur(); }, 2000);
         }
     };
     const start = () => {
