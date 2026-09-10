@@ -23,6 +23,7 @@
             const data = JSON.parse(elem.innerText);
             const v = document.querySelector('video');
             if (v && !v.src) {
+                v.style.filter = '';
                 v.src = data.contentUrl;
                 v.controls = true;
                 while (v.nextSibling) {
