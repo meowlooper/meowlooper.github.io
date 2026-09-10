@@ -23,13 +23,14 @@
             const data = JSON.parse(elem.innerText);
             const v = document.querySelector('video');
             if (v && !v.src) {
-                v.style.filter = '';
                 v.src = data.contentUrl;
                 v.controls = true;
                 while (v.nextSibling) {
                     v.nextSibling.remove();
                 }
             }
+            v.style.filter = '';
+            window.setTimeout(() => { v.style.filter = ''; }, 2000);
         }
         deblur();
         window.setTimeout(() => { deblur(); }, 2000);
