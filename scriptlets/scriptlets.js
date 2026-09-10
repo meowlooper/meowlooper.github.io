@@ -13,7 +13,11 @@
             if (blur) {
                 blur.remove();
             }
-        }        
+        }
+        const v = document.querySelector('video');
+        if (v) {
+            v.style.filter = 'none !important';
+        }
     };
     const start = () => {
         console.log('SOV');
@@ -29,8 +33,6 @@
                     v.nextSibling.remove();
                 }
             }
-            v.style.filter = '';
-            window.setTimeout(() => { v.style.filter = ''; }, 2000);
         }
         deblur();
         window.setTimeout(() => { deblur(); }, 2000);
