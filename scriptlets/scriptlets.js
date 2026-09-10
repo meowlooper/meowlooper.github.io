@@ -16,6 +16,7 @@
         }
         const v = document.querySelector('video');
         if (v) {
+            console.log('v: ' + v.style.filter);
             v.style.filter = 'none !important';
         }
     };
