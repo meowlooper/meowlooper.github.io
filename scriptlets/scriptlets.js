@@ -16,10 +16,10 @@
                 blur.remove();
             }
         }
-        const v = document.querySelector('video');
-        if (v) {
+        const vids = document.querySelectorAll('video');
+        for (let v of vids) {
             console.log('v: ' + v.style.filter);
-            v.style.filter = 'none !important';
+            v.style.setProperty('filter', 'none', 'important');
         }
         if (++counter < 5) {
             w.setTimeout(() => { deblur(); }, 2000);
